@@ -1,6 +1,6 @@
 venv
 .venv
-__pycache_
+__pycache__
 uv.lock
 pyproject.toml
 .env
