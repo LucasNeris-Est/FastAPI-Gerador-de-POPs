@@ -295,10 +295,10 @@ def extract_text_from_pdf(pdf_file: bytes) -> str:
 @app.post("/chat_with_pdf/", response_model=ChatOutput)
 async def process_question_with_pdf(
     question: str = Form(...),
-    pdf_file: UploadFile = File(None)
+    pdf_file: UploadFile = File(None)  # Pode ser None
 ):
     try:
-        if pdf_file:
+        if pdf_file is not None:
             # Ler o conteúdo do PDF
             pdf_content = await pdf_file.read()
             pdf_text = extract_text_from_pdf(pdf_content)
@@ -319,7 +319,6 @@ async def process_question_with_pdf(
             # Comportamento padrão sem PDF
             response = chat_with_persona(question)
 
-        # Resto do processamento permanece igual
         response = extract_tex_content(response)
         guard = Guard().use(ValidTex, on_fail="exception")
         guard.validate(response)
@@ -337,16 +336,6 @@ async def process_question_with_pdf(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
-
-# Manter a rota original para compatibilidade
-@app.post("/chat/", response_model=ChatOutput)
-async def process_question(input: ChatInput):
-    if input.has_pdf:
-        raise HTTPException(
-            status_code=400, 
-            detail="Para enviar PDF, use o endpoint /chat_with_pdf/"
-        )
-    return await process_question_with_pdf(question=input.question)
 
 @app.get("/download_pdf/{filename}")
 def download_pdf(filename: str):
