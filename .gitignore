@@ -1,0 +1,7 @@
+venv
+.venv
+__pycache_
+uv.lock
+pyproject.toml
+.env
+env
