@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 from guardrails import Guard
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 import re  # Para capturar conteúdo entre delimitadores
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
