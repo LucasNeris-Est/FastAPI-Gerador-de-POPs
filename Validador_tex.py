@@ -7,12 +7,11 @@ from guardrails.validators import (
     register_validator,
 )
 
-@register_validator(
-    name="guardrails/valid_tex", data_type=["string"]
-)
+
+@register_validator(name="guardrails/valid_tex", data_type=["string"])
 class ValidTex(Validator):
     """Validates that a value is a valid TeX document.
-    
+
 
     **Key Properties**
 

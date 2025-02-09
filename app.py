@@ -24,10 +24,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Rota de teste/health check
 @app.get("/")
 async def root():
     return {"status": "ok"}
+
 
 # Monta o diretório 'output' para servir arquivos estáticos
 app.mount("/static", StaticFiles(directory="output"), name="static")
@@ -38,10 +40,13 @@ load_dotenv()
 # Configurar a chave da API do Google Gemini
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
-    raise ValueError("API Key não encontrada. Certifique-se de que a variável 'GEMINI_API_KEY' está configurada no arquivo .env.")
+    raise ValueError(
+        "API Key não encontrada. Certifique-se de que a variável 'GEMINI_API_KEY' está configurada no arquivo .env."
+    )
 
 # Configurar a API Key
 genai.configure(api_key=api_key)
+
 
 # Função para extrair conteúdo entre delimitadores
 def extract_tex_content(tex_string):
@@ -54,10 +59,19 @@ def extract_tex_content(tex_string):
     Returns:
     - str: Conteúdo entre os delimitadores ou mensagem de erro.
     """
-    match = re.search(r"\\documentclass.*?\\begin\{document\}(.*?)\\end\{document\}", tex_string, re.DOTALL)
+    match = re.search(
+        r"\\documentclass.*?\\begin\{document\}(.*?)\\end\{document\}",
+        tex_string,
+        re.DOTALL,
+    )
     if match:
-        return r"\documentclass" + tex_string.split(r"\documentclass", 1)[1].split(r"\begin{document}", 1)[0] + \
-               r"\begin{document}" + match.group(1) + r"\end{document}"
+        return (
+            r"\documentclass"
+            + tex_string.split(r"\documentclass", 1)[1].split(r"\begin{document}", 1)[0]
+            + r"\begin{document}"
+            + match.group(1)
+            + r"\end{document}"
+        )
     else:
         return "Erro: Delimitadores \\documentclass e \\end{document} não encontrados."
 
@@ -84,9 +98,17 @@ def compile_latex(tex_content, output_directory):
 
     try:
         # Executar o pdflatex para compilar o arquivo .tex
-        subprocess.run([r'C:\Users\Polo\AppData\Local\Programs\MiKTeX\miktex\bin\x64\pdflatex', "-interaction=nonstopmode", "document.tex"],
-               cwd=output_directory, 
-               stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        subprocess.run(
+            [
+                r"C:\Users\Polo\AppData\Local\Programs\MiKTeX\miktex\bin\x64\pdflatex",
+                "-interaction=nonstopmode",
+                "document.tex",
+            ],
+            cwd=output_directory,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
 
         print(f"PDF gerado com sucesso: {pdf_file}")
         return pdf_file
@@ -97,10 +119,10 @@ def compile_latex(tex_content, output_directory):
 
 
 # Persona fixa
-PERSONA_DESCRIPTION = r"""- Carrege o perfil delimitado pela tag 
+PERSONA_DESCRIPTION = r"""- Carrege o perfil delimitado pela tag
             <usuario></usuario> no placeholder {usuario}
 
-            - Carrege o perfil delimitado pela tag 
+            - Carrege o perfil delimitado pela tag
             <especialista></especialista> no placeholder  {especialista}
 
             <especialista>
@@ -115,7 +137,7 @@ PERSONA_DESCRIPTION = r"""- Carrege o perfil delimitado pela tag
             Principais responsabilidades:
             Captação de Informações: Coletar descrições informais dos processos diretamente com os colaboradores ou gestores responsáveis, garantindo que nenhum detalhe crítico seja omitido.
             Criação de POPs em LaTeX: Estruturar documentos que seguem o pardrão delimitado por <padrao><\padrao>
-            
+
 
             Validação e Feedback: Revisar os documentos junto às equipes operacionais, garantindo que as instruções sejam compreendidas e executáveis.
             Diferenciais:
@@ -132,15 +154,15 @@ PERSONA_DESCRIPTION = r"""- Carrege o perfil delimitado pela tag
             Você é uma pessoa recém-chegada à empresa, sem experiência prévia na área e precisará de instruções detalhadas e claras para compreender e executar as tarefas. Sua principal característica é a disposição para aprender e colaborar com a equipe no aprimoramento dos processos internos.
 
             **Características principais:**
-            1. **Pouca Experiência Prévia:** Como você ainda está se familiarizando com os conceitos e atividades da área, dependerá fortemente de instruções precisas e bem estruturadas para seguir os Procedimentos Operacionais Padrão (POPs).  
-            2. **Atenção aos Detalhes:** Você gosta de compreender os processos de forma sequencial, verificando cada etapa com cuidado para garantir que está seguindo corretamente as orientações.  
-            3. **Feedback Colaborativo:** Sempre que encontrar dificuldades para entender os POPs ou perceber lacunas nas instruções, você apontará essas questões de maneira clara, ajudando a empresa a identificar áreas de melhoria.  
-            4. **Comunicação Simples e Eficaz:** Embora não tenha domínio técnico no início, você consegue descrever suas percepções de forma objetiva e compreensível, o que contribui para ajustes nos materiais e treinamentos.  
-            5. **Necessidade de Acompanhamento Inicial:** Durante os primeiros dias, você precisará de supervisão próxima e exemplos práticos para compreender plenamente os processos e se sentir confiante na execução das tarefas.  
+            1. **Pouca Experiência Prévia:** Como você ainda está se familiarizando com os conceitos e atividades da área, dependerá fortemente de instruções precisas e bem estruturadas para seguir os Procedimentos Operacionais Padrão (POPs).
+            2. **Atenção aos Detalhes:** Você gosta de compreender os processos de forma sequencial, verificando cada etapa com cuidado para garantir que está seguindo corretamente as orientações.
+            3. **Feedback Colaborativo:** Sempre que encontrar dificuldades para entender os POPs ou perceber lacunas nas instruções, você apontará essas questões de maneira clara, ajudando a empresa a identificar áreas de melhoria.
+            4. **Comunicação Simples e Eficaz:** Embora não tenha domínio técnico no início, você consegue descrever suas percepções de forma objetiva e compreensível, o que contribui para ajustes nos materiais e treinamentos.
+            5. **Necessidade de Acompanhamento Inicial:** Durante os primeiros dias, você precisará de supervisão próxima e exemplos práticos para compreender plenamente os processos e se sentir confiante na execução das tarefas.
 
             **Seu papel no início:**
-            1. **Revisar os POPs:** Você será introduzido aos procedimentos de forma gradual, começando pelas tarefas mais simples, enquanto observa e aprende com os colegas experientes.  
-            2. **Questionar e Sugerir:** Durante a execução das tarefas, você identificará pontos de confusão ou informações ausentes nos POPs e fornecerá feedback para a equipe.  
+            1. **Revisar os POPs:** Você será introduzido aos procedimentos de forma gradual, começando pelas tarefas mais simples, enquanto observa e aprende com os colegas experientes.
+            2. **Questionar e Sugerir:** Durante a execução das tarefas, você identificará pontos de confusão ou informações ausentes nos POPs e fornecerá feedback para a equipe.
             3. **Auxiliar na Melhoria:** Seu olhar de iniciante será essencial para destacar inconsistências ou ambiguidades que podem dificultar o aprendizado de novos colaboradores no futuro.
 
             Com sua colaboração, a empresa conseguirá ajustar os processos para torná-los mais claros, acessíveis e eficientes.
@@ -249,15 +271,18 @@ PERSONA_DESCRIPTION = r"""- Carrege o perfil delimitado pela tag
             </loop>
             """
 
+
 # Modelo de entrada atualizado
 class ChatInput(BaseModel):
     question: str
     has_pdf: bool = False  # Flag para indicar se há PDF anexado
 
+
 # Modelo de saída
 class ChatOutput(BaseModel):
     response: str
     pdf_path: str
+
 
 # Função para interagir com o Gemini
 def chat_with_persona(question):
@@ -276,6 +301,7 @@ def chat_with_persona(question):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao acessar o Gemini: {e}")
 
+
 # Função para extrair texto do PDF
 def extract_text_from_pdf(pdf_file: bytes) -> str:
     """
@@ -291,29 +317,29 @@ def extract_text_from_pdf(pdf_file: bytes) -> str:
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Erro ao processar PDF: {str(e)}")
 
+
 # Nova rota para upload de PDF com modificações
 @app.post("/chat_with_pdf/", response_model=ChatOutput)
 async def process_question_with_pdf(
-    question: str = Form(...),
-    pdf_file: UploadFile = File(None)  # Pode ser None
+    question: str = Form(...), pdf_file: UploadFile = File(None)  # Pode ser None
 ):
     try:
         if pdf_file is not None:
             # Ler o conteúdo do PDF
             pdf_content = await pdf_file.read()
             pdf_text = extract_text_from_pdf(pdf_content)
-            
+
             # Modificar a pergunta para incluir o contexto do PDF
             enhanced_question = f"""
             Analise o seguinte POP existente e faça as alterações solicitadas:
-            
+
             POP Atual:
             {pdf_text}
-            
+
             Alterações solicitadas:
             {question}
             """
-            
+
             response = chat_with_persona(enhanced_question)
         else:
             # Comportamento padrão sem PDF
@@ -337,6 +363,7 @@ async def process_question_with_pdf(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
 
+
 @app.get("/download_pdf/{filename}")
 def download_pdf(filename: str):
     file_path = os.path.join("./output", filename)
@@ -345,7 +372,7 @@ def download_pdf(filename: str):
             file_path,
             media_type="application/pdf",
             filename=filename,  # Força o download com o nome original
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
     else:
         raise HTTPException(status_code=404, detail="Arquivo não encontrado.")

@@ -1,8 +1,13 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0  # Última versão no momento, atualize conforme necessário
+    rev: v5.0.0  # Última versão no momento, atualize conforme necessário
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
-      - id: flake8  # Se quiser validar código Python
+
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        args: ["--line-length=88"]

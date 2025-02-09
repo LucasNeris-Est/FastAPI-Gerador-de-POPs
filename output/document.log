@@ -143,7 +143,7 @@ MM)
 .sty
 Package: lastpageclassic 2024/11/24 v2.1d Refers to last page's name (HMM; JPG)
 
-) 
+)
 ))
 (C:\Users\Polo\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-pdft
 ex.def
@@ -175,7 +175,7 @@ LaTeX Font Info:    ... okay on input line 38.
 * paper: a4paper
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
-* modes: 
+* modes:
 * h-part:(L,W,R)=(72.26999pt, 452.9679pt, 72.26999pt)
 * v-part:(T,H,B)=(72.26999pt, 700.50687pt, 72.26999pt)
 * \paperwidth=597.50787pt
@@ -238,7 +238,7 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 
 AED: lastpage setting LastPage
 
-Package fancyhdr Warning: \headheight is too small (12.0pt): 
+Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                Make it at least 14.49998pt, for example:
 (fancyhdr)                \setlength{\headheight}{14.49998pt}.
 (fancyhdr)                You might also make \topmargin smaller:
@@ -249,7 +249,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-04>
  ***********
- ) 
+ )
 Here is how much of TeX's memory you used:
  3002 strings out of 474486
  50210 string characters out of 5744228
@@ -266,4 +266,3 @@ PDF statistics:
  19 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
-

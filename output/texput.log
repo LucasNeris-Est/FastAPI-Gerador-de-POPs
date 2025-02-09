@@ -6,10 +6,10 @@ entering extended mode
 
 ! Emergency stop.
 <*> .output/document.tex
-                        
+
 *** (job aborted, file error in nonstop mode)
 
- 
+
 Here is how much of TeX's memory you used:
  2 strings out of 473650
  18 string characters out of 5715042
