@@ -1,13 +1,26 @@
+name: Pre-Commit Checks
+
 on:
   pull_request:
   push:
     branches: [main, test-me-*]
 
 jobs:
-  main:
+  pre-commit:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
-    - name: self test action
-      uses: ./
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'  # ou a versão que estiver usando
+
+      - name: Instalar dependências do pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit install
+
+      - name: Rodar Pre-Commit
+        run: pre-commit run --all-files
