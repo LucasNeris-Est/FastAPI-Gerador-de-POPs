@@ -73,7 +73,7 @@ async def process_question_with_pdf(
     question: str = Form(...), pdf_file: UploadFile = File(None)  # Pode ser None
 ):
     try:
-        if pdf_file is not None:
+        if pdf_file is not None and pdf_file != "":
             # Ler o conteúdo do PDF
             pdf_content = await pdf_file.read()
             pdf_text = extract_text_from_pdf(pdf_content)

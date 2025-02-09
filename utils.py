@@ -5,6 +5,7 @@ import fitz  # PyMuPDF for PDF text extraction
 import google.generativeai as genai
 from fastapi import HTTPException
 from personas import PERSONA_DESCRIPTION_GERAPOP
+import json
 
 
 # Função para extrair conteúdo entre delimitadores
@@ -56,10 +57,15 @@ def compile_latex(tex_content, output_directory):
         file.write(tex_content)
 
     try:
+        # Ler o caminho do pdflatex do arquivo de configuração
+        with open("config.json", "r") as config_file:
+            config = json.load(config_file)
+            pdflatex_path = config["pdflatex_path"]
+
         # Executar o pdflatex para compilar o arquivo .tex
         subprocess.run(
             [
-                r"C:\Users\Polo\AppData\Local\Programs\MiKTeX\miktex\bin\x64\pdflatex",
+                pdflatex_path,
                 "-interaction=nonstopmode",
                 "document.tex",
             ],
@@ -76,9 +82,22 @@ def compile_latex(tex_content, output_directory):
         print("Erro durante a compilação do LaTeX:", e)
         return None
 
+    except FileNotFoundError as e:
+        print("Erro: Arquivo de configuração não encontrado.", e)
+        return None
+
+    except KeyError as e:
+        print(
+            "Erro: Caminho do pdflatex não especificado no arquivo de configuração.", e
+        )
+        return None
+
 
 # Função para interagir com o Gemini
 def chat_with_persona(question):
+    """
+    Envia uma pergunta para o Gemini e retorna a resposta gerada utilizando a persona GERAPOP.
+    """
     try:
         # Inicializar o modelo
         model = genai.GenerativeModel(model_name="gemini-1.5-flash")
