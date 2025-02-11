@@ -7,19 +7,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Tornar as constantes disponíveis para importação
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "sua_chave_secreta_padrao")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 class JWTBearer(HTTPBearer):
-    def _init_(self, auto_error: bool = True):
-        super(JWTBearer, self)._init_(auto_error=auto_error)
+    def __init__(self, auto_error: bool = True):
+        super(JWTBearer, self).__init__(auto_error=auto_error)
 
-    async def _call_(self, request: Request):
-        credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self)._call_(
-            request
-        )
+    async def __call__(self, request: Request):
+        credentials: HTTPAuthorizationCredentials = await super(
+            JWTBearer, self
+        ).__call__(request)
 
         if not credentials:
             raise HTTPException(

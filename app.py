@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends, Request
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
@@ -14,9 +14,12 @@ from utils import (
     extract_text_from_pdf,
     chat_with_persona,
 )
-from auth import JWTBearer, create_access_token
+from auth import JWTBearer, create_access_token, SECRET_KEY, ALGORITHM
 from fastapi.security import HTTPBasicCredentials
 from typing import Dict
+from download_manager import DownloadManager
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import jwt
 
 
 # Modelo de entrada atualizado
@@ -65,6 +68,9 @@ if not api_key:
 # Configurar a API Key
 genai.configure(api_key=api_key)
 
+# Inicializar o gerenciador de downloads
+download_manager = DownloadManager()
+
 
 # Nova rota para gerar token
 @app.post("/token", response_model=Dict[str, str])
@@ -85,17 +91,25 @@ async def login(credentials: HTTPBasicCredentials):
     )
 
 
-# Nova rota para upload de PDF com modificações
+# Atualizar a rota de processamento
 @app.post(
     "/chat_with_pdf/",
     response_model=ChatOutput,
     description="Enviar pergunta com PDF opcional",
-    dependencies=[Depends(JWTBearer())],  # Adicionar dependência de autenticação
+    dependencies=[Depends(JWTBearer())],
 )
 async def process_question_with_pdf(
-    question: str = Form(...), pdf_file: UploadFile = File(None)  # Pode ser None
+    request: Request,  # Adicionar request para pegar o token
+    question: str = Form(...),
+    pdf_file: UploadFile = File(None),
 ):
     try:
+        # Extrair user_id do token
+        auth_header = request.headers.get("Authorization")
+        token = auth_header.split(" ")[1]
+        user_data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = user_data["sub"]
+
         if pdf_file is not None and pdf_file != "":
             # Ler o conteúdo do PDF
             pdf_content = await pdf_file.read()
@@ -127,7 +141,14 @@ async def process_question_with_pdf(
         pdf_path = compile_latex(response, output_directory)
         if pdf_path:
             pdf_filename = os.path.basename(pdf_path)
-            pdf_download_url = f"http://127.0.0.1:8001/download_pdf/{pdf_filename}"
+
+            # Criar token único para download
+            download_token = download_manager.create_download_token(
+                pdf_filename, user_id
+            )
+
+            # URL de download com token
+            pdf_download_url = f"http://127.0.0.1:8001/secure_download/{download_token}"
             return {"response": response, "pdf_path": pdf_download_url}
         else:
             raise HTTPException(status_code=500, detail="Falha ao gerar o PDF.")
@@ -136,15 +157,23 @@ async def process_question_with_pdf(
         raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
 
 
-@app.get("/download_pdf/{filename}", dependencies=[Depends(JWTBearer())])
-def download_pdf(filename: str):
-    file_path = os.path.join("./output", filename)
-    if os.path.exists(file_path):
-        return FileResponse(
-            file_path,
-            media_type="application/pdf",
-            filename=filename,  # Força o download com o nome original
-            headers={"Content-Disposition": f"attachment; filename={filename}"},
+# Nova rota para download seguro
+@app.get("/secure_download/{token}")
+def secure_download(token: str):
+    filename = download_manager.validate_token(token)
+
+    if not filename:
+        raise HTTPException(
+            status_code=403, detail="Token de download inválido ou expirado"
         )
-    else:
-        raise HTTPException(status_code=404, detail="Arquivo não encontrado.")
+
+    file_path = os.path.join("./output", filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+
+    return FileResponse(
+        file_path,
+        media_type="application/pdf",
+        filename=filename,
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
