@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
@@ -14,6 +14,9 @@ from utils import (
     extract_text_from_pdf,
     chat_with_persona,
 )
+from auth import JWTBearer, create_access_token
+from fastapi.security import HTTPBasicCredentials
+from typing import Dict
 
 
 # Modelo de entrada atualizado
@@ -63,11 +66,31 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 
+# Nova rota para gerar token
+@app.post("/token", response_model=Dict[str, str])
+async def login(credentials: HTTPBasicCredentials):
+    """
+    Rota para gerar token de acesso.
+    Aqui você deve implementar sua própria lógica de validação de usuário.
+    Este é apenas um exemplo simplificado.
+    """
+    # Exemplo simples - você deve implementar sua própria validação
+    if credentials.username == "admin" and credentials.password == "senha123":
+        token = create_access_token({"sub": credentials.username})
+        return {"access_token": token, "token_type": "bearer"}
+    raise HTTPException(
+        status_code=401,
+        detail="Credenciais inválidas",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
 # Nova rota para upload de PDF com modificações
 @app.post(
     "/chat_with_pdf/",
     response_model=ChatOutput,
     description="Enviar pergunta com PDF opcional",
+    dependencies=[Depends(JWTBearer())],  # Adicionar dependência de autenticação
 )
 async def process_question_with_pdf(
     question: str = Form(...), pdf_file: UploadFile = File(None)  # Pode ser None
@@ -113,7 +136,7 @@ async def process_question_with_pdf(
         raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
 
 
-@app.get("/download_pdf/{filename}")
+@app.get("/download_pdf/{filename}", dependencies=[Depends(JWTBearer())])
 def download_pdf(filename: str):
     file_path = os.path.join("./output", filename)
     if os.path.exists(file_path):
