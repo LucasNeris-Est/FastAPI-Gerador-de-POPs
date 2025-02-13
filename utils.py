@@ -2,6 +2,7 @@ import os
 import re  # Para capturar conteúdo entre delimitadores
 import subprocess
 import fitz  # PyMuPDF for PDF text extraction
+from PyPDF2 import PdfReader
 import google.generativeai as genai
 from fastapi import HTTPException
 from personas import PERSONA_DESCRIPTION_GERAPOP
