@@ -20,6 +20,11 @@ from typing import Dict
 from download_manager import DownloadManager
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
+from logger import api_logger
+import time
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request as StarletteRequest
+from starlette.responses import Response
 
 
 # Modelo de entrada atualizado
@@ -44,6 +49,39 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Middleware para logging de requisições
+class LoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: StarletteRequest, call_next) -> Response:
+        start_time = time.time()
+
+        try:
+            response = await call_next(request)
+            process_time = time.time() - start_time
+
+            # Log da requisição bem-sucedida
+            api_logger.log_request(request=request, response=response, error=None)
+
+            return response
+
+        except Exception as e:
+            process_time = time.time() - start_time
+
+            # Log do erro
+            api_logger.log_error(
+                error=e,
+                context={
+                    "request_method": request.method,
+                    "request_url": str(request.url),
+                    "process_time": process_time,
+                },
+            )
+            raise
+
+
+# Adicionar middleware ao app
+app.add_middleware(LoggingMiddleware)
 
 
 # Rota de teste/health check
@@ -72,23 +110,39 @@ genai.configure(api_key=api_key)
 download_manager = DownloadManager()
 
 
-# Nova rota para gerar token
+# Atualizar rota de login para incluir logs de segurança
 @app.post("/token", response_model=Dict[str, str])
-async def login(credentials: HTTPBasicCredentials):
-    """
-    Rota para gerar token de acesso.
-    Aqui você deve implementar sua própria lógica de validação de usuário.
-    Este é apenas um exemplo simplificado.
-    """
-    # Exemplo simples - você deve implementar sua própria validação
-    if credentials.username == "admin" and credentials.password == "senha123":
-        token = create_access_token({"sub": credentials.username})
-        return {"access_token": token, "token_type": "bearer"}
-    raise HTTPException(
-        status_code=401,
-        detail="Credenciais inválidas",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+async def login(credentials: HTTPBasicCredentials, request: Request):
+    try:
+        if credentials.username == "admin" and credentials.password == "senha123":
+            token = create_access_token({"sub": credentials.username})
+
+            # Log do login bem-sucedido
+            api_logger.log_security_event(
+                "login_success",
+                {"username": credentials.username, "ip": request.client.host},
+            )
+
+            return {"access_token": token, "token_type": "bearer"}
+
+        # Log da tentativa de login falha
+        api_logger.log_security_event(
+            "login_failed",
+            {
+                "username": credentials.username,
+                "ip": request.client.host,
+                "reason": "Invalid credentials",
+            },
+        )
+
+        raise HTTPException(
+            status_code=401,
+            detail="Credenciais inválidas",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        api_logger.log_error(e, {"endpoint": "/token"})
+        raise
 
 
 # Atualizar a rota de processamento
@@ -149,31 +203,44 @@ async def process_question_with_pdf(
 
             # URL de download com token
             pdf_download_url = f"http://127.0.0.1:8001/secure_download/{download_token}"
+
+            api_logger.log_request(request=request, response=response)
+
             return {"response": response, "pdf_path": pdf_download_url}
         else:
             raise HTTPException(status_code=500, detail="Falha ao gerar o PDF.")
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
+        api_logger.log_error(e, {"endpoint": "/chat_with_pdf"})
+        raise
 
 
 # Nova rota para download seguro
 @app.get("/secure_download/{token}")
-def secure_download(token: str):
-    filename = download_manager.validate_token(token)
+async def secure_download(token: str, request: Request):
+    try:
+        filename = download_manager.validate_token(token)
 
-    if not filename:
-        raise HTTPException(
-            status_code=403, detail="Token de download inválido ou expirado"
+        if not filename:
+            raise HTTPException(
+                status_code=403, detail="Token de download inválido ou expirado"
+            )
+
+        file_path = os.path.join("./output", filename)
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+
+        api_logger.log_security_event(
+            "file_download",
+            {"token": token, "ip": request.client.host, "filename": filename},
         )
 
-    file_path = os.path.join("./output", filename)
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
-
-    return FileResponse(
-        file_path,
-        media_type="application/pdf",
-        filename=filename,
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
-    )
+        return FileResponse(
+            file_path,
+            media_type="application/pdf",
+            filename=filename,
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+    except Exception as e:
+        api_logger.log_error(e, {"endpoint": "/secure_download"})
+        raise
