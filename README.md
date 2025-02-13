@@ -213,4 +213,4 @@ Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE.md
 ## 📬 Suporte
 
 📧 Para dúvidas ou suporte, abra uma **issue** no GitHub ou entre em contato por email:  
-📩 **seu-email@exemplo.com**  
+📩 **lucasgsn2014@gmail.com**
