@@ -82,7 +82,7 @@ GEMINI_API_KEY=sua_chave_api_gemini
 
 ### 1️⃣ Inicie o servidor:
 ```bash
-uvicorn app:app --reload --port 8001
+fastapi dev app.py --port 8001
 ```
 
 ### 2️⃣ Obtenha um token de acesso:
