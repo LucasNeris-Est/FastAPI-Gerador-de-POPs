@@ -1,6 +1,3 @@
-Aqui está o README.md bem formatado e estruturado em Markdown para seu projeto:  
-
----
 
 ```markdown
 # 📜 API de Geração de POPs com Autenticação
